@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jahon Kinolari — Dunyo filmlari portali</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+</head>
+<body>
+    <!-- Top Navigation Header -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" onclick="resetFilters()">
+                <div class="logo-icon">🎬</div>
+                <div class="logo-text">
+                    <span class="brand-title">Jahon Kinolari</span>
+                    <span class="brand-subtitle">62,000+ Filmlar bazasi (2026 gacha)</span>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Kino nomi, mavzusi yoki tavsifi..." autocomplete="off">
+                <button id="clearSearchBtn" class="clear-btn" style="display: none;">✕</button>
+            </div>
+
+            <nav class="nav-actions">
+                <button class="nav-btn active" data-filter="trending" onclick="setQuickTab('trending')">
+                    🔥 Trenddagilar
+                </button>
+                <button class="nav-btn" data-filter="rating" onclick="setQuickTab('rating')">
+                    ⭐ Top Reyting
+                </button>
+                <button class="nav-btn" data-filter="upcoming" onclick="setQuickTab('upcoming')">
+                    🚀 2024–2026
+                </button>
+                <button class="nav-btn" onclick="openAnalyticsModal()">
+                    📊 Tahlil & Grafika
+                </button>
+                <button class="nav-btn favorites-btn" onclick="openFavoritesModal()">
+                    ❤️ Sevimlilar <span id="favCountBadge" class="badge">0</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Banner Slider -->
+        <section class="hero-section" id="heroSection">
+            <div class="hero-slider" id="heroSlider">
+                <!-- Slides will be injected dynamically -->
+                <div class="hero-placeholder">
+                    <div class="hero-loading-spinner"></div>
+                    <p>Ommabop filmlar yuklanmoqda...</p>
+                </div>
+            </div>
+            <div class="hero-controls">
+                <button class="hero-nav prev-slide" onclick="changeHeroSlide(-1)">❮</button>
+                <div class="hero-dots" id="heroDots"></div>
+                <button class="hero-nav next-slide" onclick="changeHeroSlide(1)">❯</button>
+            </div>
+        </section>
+
+        <!-- Filters & Sort Bar -->
+        <section class="controls-bar">
+            <!-- Genre Chips Slider -->
+            <div class="genre-container">
+                <div class="genre-label">Janrlar:</div>
+                <div class="genre-chips" id="genreChips">
+                    <button class="genre-chip active" data-genre="all" onclick="selectGenre('all', this)">
+                        ✨ Barchasi
+                    </button>
+                    <!-- Dynamically populated genres -->
+                </div>
+            </div>
+
+            <!-- Filter Row: Years & Sorting -->
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="yearSelect">📅 Yili:</label>
+                    <select id="yearSelect" onchange="applyFilters()">
+                        <option value="all">Barcha yillar</option>
+                        <option value="2026">2026 yil (Yangi & Kutilayotgan)</option>
+                        <option value="2025">2025 yil</option>
+                        <option value="2024">2024 yil</option>
+                        <option value="2023">2023 yil</option>
+                        <option value="2020s">2020-2026 yillar</option>
+                        <option value="2010s">2010-2019 yillar</option>
+                        <option value="2000s">2000-2009 yillar</option>
+                        <option value="classic">Klassik (2000 dan avvalgi)</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="sortSelect">⚡ Saralash:</label>
+                    <select id="sortSelect" onchange="applyFilters()">
+                        <option value="trending">🔥 Ommaboplik (Trend)</option>
+                        <option value="rating">⭐ Eng yuqori baholangan (IMDb)</option>
+                        <option value="newest">📅 Eng yangi chiqqanlar</option>
+                        <option value="votes">👥 Ko'p ovoz to'plaganlar</option>
+                        <option value="title">🔤 Alifbo bo'yicha (A-Z)</option>
+                    </select>
+                </div>
+
+                <div class="results-stats" id="resultsStats">
+                    Yuklanmoqda...
+                </div>
+            </div>
+        </section>
+
+        <!-- Movie Grid Section -->
+        <section class="movies-section">
+            <div class="movies-grid" id="moviesGrid">
+                <!-- Movie cards inserted via JS -->
+            </div>
+
+            <!-- Empty / Not Found State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">🎬🔍</div>
+                <h3>Kino topilmadi</h3>
+                <p>Qidiruv so'rovi yoki tanlangan filtrlarni o'zgartirib ko'ring.</p>
+                <button class="btn btn-primary" onclick="resetFilters()">Barcha filmlarni ko'rsatish</button>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-container" id="gridLoading" style="display: none;">
+                <div class="spinner"></div>
+                <span>Filmlar yuklanmoqda...</span>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-bar" id="paginationBar">
+                <button class="page-btn" id="prevPageBtn" onclick="changePage(-1)">❮ Oldingi</button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPageBtn" onclick="changePage(1)">Keyingi ❯</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Movie Details Modal -->
+    <div class="modal-overlay" id="movieModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-card">
+            <button class="modal-close-btn" onclick="closeMovieModal()">✕</button>
+            
+            <div class="modal-backdrop-wrap">
+                <img id="modalBackdrop" src="" alt="Backdrop" class="modal-backdrop-img">
+                <div class="modal-backdrop-gradient"></div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-poster-wrap">
+                    <img id="modalPoster" src="" alt="Poster" class="modal-poster-img">
+                </div>
+
+                <div class="modal-details">
+                    <h2 class="modal-title" id="modalTitle">Film Nomi</h2>
+                    <p class="modal-original-title" id="modalOriginalTitle">Original title</p>
+                    <p class="modal-tagline" id="modalTagline">"Film shiori"</p>
+
+                    <div class="modal-meta-chips" id="modalMetaChips">
+                        <!-- Rating, Year, Duration etc -->
+                    </div>
+
+                    <div class="modal-genres" id="modalGenres">
+                        <!-- Genre badges -->
+                    </div>
+
+                    <div class="modal-overview-section">
+                        <h4>Qisqacha mazmuni (Overview):</h4>
+                        <p class="modal-overview" id="modalOverview"></p>
+                    </div>
+
+                    <div class="modal-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Original tili:</span>
+                            <span class="info-value" id="modalLang">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Mamlakatlar:</span>
+                            <span class="info-value" id="modalCountries">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Byudjet:</span>
+                            <span class="info-value" id="modalBudget">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Kassa tushumi:</span>
+                            <span class="info-value" id="modalRevenue">-</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <a id="modalTrailerBtn" href="#" target="_blank" class="btn btn-trailer">
+                            ▶ YouTube Treylerni ko'rish
+                        </a>
+                        <a id="modalImdbBtn" href="#" target="_blank" class="btn btn-imdb">
+                            ⭐ IMDb Sahifasi
+                        </a>
+                        <button id="modalFavBtn" class="btn btn-fav" onclick="toggleModalFavorite()">
+                            ❤️ Sevimlilarga qo'shish
+                        </button>
+                    </div>
+
+                    <!-- Similar movies -->
+                    <div class="modal-similar-section" id="modalSimilarSection" style="margin-top: 24px; display: none;">
+                        <h4 style="font-size: 0.95rem; color: var(--text-gray); margin-bottom: 10px;">✨ Sizga yoqishi mumkin bo'lgan filmlar:</h4>
+                        <div class="similar-grid" id="modalSimilarGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Drawer / Modal -->
+    <div class="modal-overlay" id="favoritesModal" onclick="closeFavOnOverlay(event)">
+        <div class="favorites-drawer">
+            <div class="fav-header">
+                <h3>❤️ Saqlangan Sevimlilar (<span id="favDrawerCount">0</span>)</h3>
+                <button class="modal-close-btn" onclick="closeFavoritesModal()">✕</button>
+            </div>
+            <div class="fav-list" id="favoritesList">
+                <!-- Favorites items -->
+            </div>
+            <div class="fav-footer" id="favFooter">
+                <button class="btn btn-secondary" onclick="clearAllFavorites()">Hammasini tozalash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3>🎬 Jahon Kinolari</h3>
+                <p>Dunyo kino sanoatining eng mashhur, yuqori baholangan va yangi filmlari katalogi (1900-2026).</p>
+            </div>
+            <div class="footer-stats" id="footerStats">
+                <span>Ma'lumotlar bazasi: Kaggle TMDB Dataset</span>
+                <span>Jami filmlar: 62,000+ ta</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+
